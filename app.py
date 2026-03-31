@@ -1,40 +1,49 @@
 import streamlit as st
 import numpy as np
-from PIL import Image
+from streamlit_drawable_canvas import st_canvas
 import cv2
 
-st.title("InkSight: Handwriting Recognition ✍️")
+st.title("InkSight: Editable Digital Ink ✍️")
 
-# Load model safely
+# Drawing canvas (editable)
+canvas_result = st_canvas(
+    fill_color="rgba(255, 255, 255, 0)",
+    stroke_width=5,
+    stroke_color="black",
+    background_color="white",
+    height=300,
+    width=300,
+    drawing_mode="freedraw",
+    key="canvas",
+)
+
+# Load model
 @st.cache_resource
 def load_model():
-    try:
-        from tensorflow.keras.models import load_model
-        model = load_model("model.h5")
-        return model
-    except:
-        return None
+    from tensorflow.keras.models import load_model
+    return load_model("model.h5")
 
 model = load_model()
 
-# Upload image
-uploaded_file = st.file_uploader("Upload Handwritten Image", type=["png", "jpg", "jpeg"])
+labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")  # change if needed
 
-if uploaded_file:
-    image = Image.open(uploaded_file).convert("L")  # convert to grayscale
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+if st.button("Predict"):
+    if canvas_result.image_data is not None:
+        img = canvas_result.image_data
 
-    # Preprocess image
-    img = np.array(image)
-    img = cv2.resize(img, (28, 28))   # adjust size based on your model
-    img = img / 255.0                 # normalize
-    img = img.reshape(1, 28, 28, 1)   # reshape for CNN
+        # Convert to grayscale
+        img = cv2.cvtColor(img.astype('uint8'), cv2.COLOR_BGR2GRAY)
 
-    if st.button("Predict"):
-        if model is not None:
-            prediction = model.predict(img)
-            result = np.argmax(prediction)
+        # Resize
+        img = cv2.resize(img, (28, 28))
 
-            st.success(f"Predicted Output: {result} ✅")
-        else:
-            st.error("Model not loaded ❌")
+        # Normalize
+        img = img / 255.0
+        img = img.reshape(1, 28, 28, 1)
+
+        prediction = model.predict(img)
+        index = np.argmax(prediction)
+        confidence = np.max(prediction) * 100
+
+        st.success(f"Prediction: {labels[index]}")
+        st.info(f"Confidence: {confidence:.2f}%")
