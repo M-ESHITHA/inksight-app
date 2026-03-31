@@ -3,4 +3,3 @@ streamlit-drawable-canvas
 numpy
 pillow
 opencv-python-headless
-tensorflow-cpu
