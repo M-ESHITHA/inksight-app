@@ -1,9 +1,9 @@
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
+import json
 
 st.title("InkSight: Editable Digital Ink ✍️")
 
-# Canvas
 canvas_result = st_canvas(
     stroke_width=5,
     stroke_color="black",
@@ -14,6 +14,17 @@ canvas_result = st_canvas(
     key="canvas",
 )
 
-# SAFE prediction button (no tensorflow)
-if st.button("Predict"):
-    st.success("Canvas Working ✅ (Model not connected yet)")
+# 🟢 SHOW EDITABLE DIGITAL INK DATA
+if canvas_result.json_data is not None:
+    stroke_data = canvas_result.json_data
+
+    st.subheader("Editable Digital Ink Data (Stroke Format)")
+    st.json(stroke_data)
+
+    # Download as file
+    st.download_button(
+        label="Download Ink Data (JSON)",
+        data=json.dumps(stroke_data),
+        file_name="ink_data.json",
+        mime="application/json"
+    )
